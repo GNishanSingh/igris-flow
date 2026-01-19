@@ -470,6 +470,14 @@ body {
   user-select: none;
 }
 
+.selection-rect {
+  fill: rgba(109, 212, 255, 0.12);
+  stroke: rgba(109, 212, 255, 0.8);
+  stroke-width: 1;
+  stroke-dasharray: 6 6;
+  pointer-events: none;
+}
+
 .node {
   fill: var(--node-bg);
   stroke: rgba(116, 144, 199, 0.5);

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import socIndentFlow from "../flow/soc-indent.json";
 
 const iconPaths: Record<string, string> = {
   plug:
@@ -160,6 +161,11 @@ type LinkSeed = {
   animationDuration?: number;
   animationDirection?: LinkDirection;
 };
+type FlowPreset = {
+  id: string;
+  label: string;
+  data: Record<string, unknown>;
+};
 
 const exportCss = `
 .node { fill: rgba(13, 19, 36, 0.92); stroke: rgba(116, 144, 199, 0.5); stroke-width: 1; filter: drop-shadow(0 10px 24px rgba(7, 10, 18, 0.45)); }
@@ -203,6 +209,13 @@ const initialNodes: Node[] = [];
 const initialGroups: Group[] = [];
 
 const initialLinks: LinkSeed[] = [];
+const flowPresets: FlowPreset[] = [
+  {
+    id: "soc-indent",
+    label: (socIndentFlow as { name?: string }).name ?? "SOC Indent",
+    data: socIndentFlow as Record<string, unknown>
+  }
+];
 
 const anchorPoint = (item: { x: number; y: number; w: number; h: number }, anchor: Anchor) => {
   switch (anchor) {
@@ -398,6 +411,7 @@ export default function Home() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [groups, setGroups] = useState<Group[]>(() => initialGroups.map((group) => ({ ...group })));
   const [selected, setSelected] = useState<SelectedItem>(null);
+  const [selectedItems, setSelectedItems] = useState<Selectable[]>([]);
   const [links, setLinks] = useState<Link[]>(() =>
     initialLinks.map((link, index) => ({
       id: `base-${index}`,
@@ -430,10 +444,12 @@ export default function Home() {
   const [isLocked, setIsLocked] = useState(false);
   const [isExportingGif, setIsExportingGif] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [hoverCursor, setHoverCursor] = useState<
     "default" | "grab" | "grabbing" | "ew-resize" | "ns-resize" | "nwse-resize" | "nesw-resize"
   >("default");
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const selectionRef = useRef<{ startX: number; startY: number; pointerId: number } | null>(null);
   const exportMenuRef = useRef<HTMLDivElement | null>(null);
   const iconObjectUrlsRef = useRef<Map<string, string>>(new Map());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -465,6 +481,16 @@ export default function Home() {
     animationEpochRef.current = performance.now();
   }
 
+  const updateSelection = (item: SelectedItem) => {
+    setSelected(item);
+    setSelectedItems(item ? [item] : []);
+  };
+
+  const updateSelectionItems = (items: Selectable[]) => {
+    setSelectedItems(items);
+    setSelected(items.length === 1 ? items[0] : null);
+  };
+
   const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const groupMap = useMemo(() => new Map(groups.map((group) => [group.id, group])), [groups]);
   const selectedNode = selected?.kind === "node" ? nodeMap.get(selected.id) ?? null : null;
@@ -492,6 +518,10 @@ export default function Home() {
       ? (performance.now() - animationEpochRef.current) / 1000
       : 0;
   const selectedIconUrl = selectedNode?.iconUrl?.trim() ?? "";
+  const selectedKeys = useMemo(
+    () => new Set(selectedItems.map((item) => `${item.kind}:${item.id}`)),
+    [selectedItems]
+  );
   const outgoingLinks = useMemo(() => {
     if (!selected) {
       return [];
@@ -601,7 +631,7 @@ export default function Home() {
     event.preventDefault();
     event.stopPropagation();
     const selectable = { kind: "node", id: node.id } satisfies Selectable;
-    setSelected(selectable);
+    updateSelection(selectable);
     startLinkDrag(event, selectable);
   };
 
@@ -614,7 +644,7 @@ export default function Home() {
     setSelectedLinkId(null);
     setHoveredGroupId(null);
     if (isLocked) {
-      setSelected({ kind: "node", id: node.id });
+      updateSelection({ kind: "node", id: node.id });
       return;
     }
     const point = toSvgPoint(event.clientX, event.clientY);
@@ -630,7 +660,7 @@ export default function Home() {
       offsetY: point.y - node.y,
       pointerId: event.pointerId
     };
-    setSelected({ kind: "node", id: node.id });
+    updateSelection({ kind: "node", id: node.id });
     setDraggingId(node.id);
     setHoverCursor("grabbing");
     svgRef.current?.setPointerCapture(event.pointerId);
@@ -645,7 +675,7 @@ export default function Home() {
     setSelectedLinkId(null);
     setHoveredGroupId(group.id);
     if (isLocked) {
-      setSelected({ kind: "group", id: group.id });
+      updateSelection({ kind: "group", id: group.id });
       return;
     }
     const point = toSvgPoint(event.clientX, event.clientY);
@@ -661,7 +691,7 @@ export default function Home() {
       offsetY: point.y - group.y,
       pointerId: event.pointerId
     };
-    setSelected({ kind: "group", id: group.id });
+    updateSelection({ kind: "group", id: group.id });
     setDraggingId(null);
     setHoverCursor("grabbing");
     svgRef.current?.setPointerCapture(event.pointerId);
@@ -671,12 +701,21 @@ export default function Home() {
     if (event.target !== svgRef.current) {
       return;
     }
-    setSelected(null);
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    updateSelection(null);
     setSelectedLinkId(null);
     setHoveredGroupId(null);
     if (isLocked) {
       return;
     }
+    const point = toSvgPoint(event.clientX, event.clientY);
+    selectionRef.current = { startX: point.x, startY: point.y, pointerId: event.pointerId };
+    setSelectionBox({ x: point.x, y: point.y, w: 0, h: 0 });
+    svgRef.current?.setPointerCapture(event.pointerId);
   };
 
   useEffect(() => {
@@ -713,6 +752,15 @@ export default function Home() {
 
   const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     if (isLocked) {
+      return;
+    }
+    if (selectionRef.current && selectionRef.current.pointerId === event.pointerId) {
+      const point = toSvgPoint(event.clientX, event.clientY);
+      const x = Math.min(selectionRef.current.startX, point.x);
+      const y = Math.min(selectionRef.current.startY, point.y);
+      const w = Math.abs(point.x - selectionRef.current.startX);
+      const h = Math.abs(point.y - selectionRef.current.startY);
+      setSelectionBox({ x, y, w, h });
       return;
     }
     if (linkDragRef.current && linkDragRef.current.pointerId === event.pointerId) {
@@ -888,6 +936,48 @@ export default function Home() {
     if (isLocked) {
       return;
     }
+    if (selectionRef.current && selectionRef.current.pointerId === event.pointerId) {
+      const start = selectionRef.current;
+      const point = toSvgPoint(event.clientX, event.clientY);
+      const x = Math.min(start.startX, point.x);
+      const y = Math.min(start.startY, point.y);
+      const w = Math.abs(point.x - start.startX);
+      const h = Math.abs(point.y - start.startY);
+      if (svgRef.current?.hasPointerCapture(event.pointerId)) {
+        svgRef.current.releasePointerCapture(event.pointerId);
+      }
+      selectionRef.current = null;
+      setSelectionBox(null);
+      if (w < 4 && h < 4) {
+        updateSelection(null);
+        setSelectedLinkId(null);
+        return;
+      }
+      const selectedItemsNext: Selectable[] = [];
+      nodes.forEach((node) => {
+        const intersects =
+          node.x <= x + w &&
+          node.x + node.w >= x &&
+          node.y <= y + h &&
+          node.y + node.h >= y;
+        if (intersects) {
+          selectedItemsNext.push({ kind: "node", id: node.id });
+        }
+      });
+      groups.forEach((group) => {
+        const intersects =
+          group.x <= x + w &&
+          group.x + group.w >= x &&
+          group.y <= y + h &&
+          group.y + group.h >= y;
+        if (intersects) {
+          selectedItemsNext.push({ kind: "group", id: group.id });
+        }
+      });
+      updateSelectionItems(selectedItemsNext);
+      setSelectedLinkId(null);
+      return;
+    }
     if (linkDragRef.current && linkDragRef.current.pointerId === event.pointerId) {
       const from = linkDragRef.current.from;
       const point = toSvgPoint(event.clientX, event.clientY);
@@ -899,7 +989,7 @@ export default function Home() {
           const anchors = resolveAnchors(fromItem, toItem);
           const tone = from.kind === "node" ? (fromItem as Node).tone : "muted";
           addLink(from.kind, from.id, target.kind, target.id, anchors.from, anchors.to, tone);
-          setSelected(target);
+          updateSelection(target);
         }
       }
       if (svgRef.current?.hasPointerCapture(event.pointerId)) {
@@ -961,7 +1051,7 @@ export default function Home() {
       tone: "secondary"
     };
     setNodes((prev) => [...prev, nextNode]);
-    setSelected({ kind: "node", id });
+    updateSelection({ kind: "node", id });
   };
 
   const handleAddGroup = () => {
@@ -982,7 +1072,7 @@ export default function Home() {
       h: height
     };
     setGroups((prev) => [...prev, nextGroup]);
-    setSelected({ kind: "group", id });
+    updateSelection({ kind: "group", id });
   };
 
   const handleResizeStart = (
@@ -1013,7 +1103,7 @@ export default function Home() {
       pointerId: event.pointerId
     };
     setHoverCursor(resizeCursorForEdges(edges));
-    setSelected({ kind, id: item.id });
+    updateSelection({ kind, id: item.id });
     setDraggingId(null);
     dragRef.current = null;
     svgRef.current?.setPointerCapture(event.pointerId);
@@ -1033,8 +1123,13 @@ export default function Home() {
       )
     );
     if (selected?.kind === "node" && selected.id === nodeId) {
-      setSelected(null);
+      updateSelection(null);
     }
+    setSelectedItems((prev) => {
+      const next = prev.filter((item) => !(item.kind === "node" && item.id === nodeId));
+      setSelected(next.length === 1 ? next[0] : null);
+      return next;
+    });
     setSelectedLinkId(null);
     setDraggingId(null);
     dragRef.current = null;
@@ -1053,8 +1148,13 @@ export default function Home() {
       )
     );
     if (selected?.kind === "group" && selected.id === groupId) {
-      setSelected(null);
+      updateSelection(null);
     }
+    setSelectedItems((prev) => {
+      const next = prev.filter((item) => !(item.kind === "group" && item.id === groupId));
+      setSelected(next.length === 1 ? next[0] : null);
+      return next;
+    });
     if (hoveredGroupId === groupId) {
       setHoveredGroupId(null);
     }
@@ -1075,7 +1175,7 @@ export default function Home() {
     setNodes([]);
     setGroups([]);
     setLinks([]);
-    setSelected(null);
+    updateSelection(null);
     setDraggingId(null);
     setLinkPreview(null);
     setLinkHoverTarget(null);
@@ -1091,6 +1191,38 @@ export default function Home() {
       return;
     }
     fileInputRef.current?.click();
+  };
+
+  const applyGraphPayload = (payload: Record<string, unknown>) => {
+    iconObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    iconObjectUrlsRef.current.clear();
+    const nextNodes = Array.isArray(payload.nodes) ? (payload.nodes as Node[]) : [];
+    const nextGroups = Array.isArray(payload.groups) ? (payload.groups as Group[]) : [];
+    const nextLinks = Array.isArray(payload.links)
+      ? (payload.links as Link[]).map((link) => ({
+          ...link,
+          from: { ...link.from, kind: link.from.kind ?? "node" },
+          to: { ...link.to, kind: link.to.kind ?? "node" },
+          animation: link.animation ?? "flow"
+        }))
+      : [];
+    setNodes(nextNodes);
+    setGroups(nextGroups);
+    setLinks(nextLinks);
+    updateSelection(null);
+    setSelectedLinkId(null);
+    setLinkPreview(null);
+    setLinkHoverTarget(null);
+    dragRef.current = null;
+    resizeRef.current = null;
+    linkDragRef.current = null;
+  };
+
+  const handleLoadFlowPreset = (preset: FlowPreset) => {
+    if (isLocked) {
+      return;
+    }
+    applyGraphPayload(preset.data);
   };
 
   const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1109,29 +1241,7 @@ export default function Home() {
         if (!parsed || typeof parsed !== "object") {
           throw new Error("Invalid JSON");
         }
-        iconObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-        iconObjectUrlsRef.current.clear();
-        setNodes(Array.isArray(parsed.nodes) ? parsed.nodes : []);
-        setGroups(Array.isArray(parsed.groups) ? parsed.groups : []);
-        setLinks(
-          Array.isArray(parsed.links)
-            ? parsed.links.map((link: Link) => ({
-                ...link,
-                from: { ...link.from, kind: link.from.kind ?? "node" },
-                to: { ...link.to, kind: link.to.kind ?? "node" },
-                animation: link.animation ?? "flow",
-                animationDuration: link.animationDuration,
-                animationDirection: link.animationDirection
-              }))
-            : []
-        );
-        setSelected(null);
-        setSelectedLinkId(null);
-        setLinkPreview(null);
-        setLinkHoverTarget(null);
-        dragRef.current = null;
-        resizeRef.current = null;
-        linkDragRef.current = null;
+        applyGraphPayload(parsed as Record<string, unknown>);
       } catch {
         window.alert("Invalid JSON file.");
       }
@@ -1695,6 +1805,26 @@ export default function Home() {
       </div>
     </div>
   );
+  const flowPresetsPanel = flowPresets.length ? (
+    <div className="connections">
+      <div className="connections-title">Flow presets</div>
+      <div className="connections-list">
+        {flowPresets.map((preset) => (
+          <div key={preset.id} className="connection-row">
+            <span>{preset.label}</span>
+            <button className="btn small" type="button" disabled={isLocked} onClick={() => handleLoadFlowPreset(preset)}>
+              Load
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : (
+    <div className="connections">
+      <div className="connections-title">Flow presets</div>
+      <div className="connection-empty">No flow presets found.</div>
+    </div>
+  );
   const linkSettings = selectedLink ? (
     <div className="connections">
       <div className="connections-title">Link settings</div>
@@ -1998,7 +2128,12 @@ export default function Home() {
           <section className="editor">
             <div className="editor-title">Editor</div>
             <div className="editor-hint">Drag the edges of a node or group to resize.</div>
-            {selectedNode ? (
+            {selectedItems.length > 1 ? (
+              <div className="editor-empty">
+                <p>{selectedItems.length} items selected. Select a single item to edit details.</p>
+                {layoutControls}
+              </div>
+            ) : selectedNode ? (
               <div className="editor-grid">
                 <div className="field">
                   <label htmlFor="node-label">Label</label>
@@ -2247,6 +2382,7 @@ export default function Home() {
                 </div>
                 {linkSettings}
                 {layoutControls}
+                {flowPresetsPanel}
               </div>
             ) : selectedGroup ? (
               <div className="editor-grid">
@@ -2495,6 +2631,7 @@ export default function Home() {
               </div>
               {linkSettings}
               {layoutControls}
+              {flowPresetsPanel}
             </div>
           ) : selectedLink ? (
             <div className="editor-grid">{linkSettings}</div>
@@ -2516,6 +2653,7 @@ export default function Home() {
                 </button>
               </div>
               {layoutControls}
+              {flowPresetsPanel}
             </div>
           )}
         </section>
@@ -2553,7 +2691,7 @@ export default function Home() {
           </defs>
 
             {groups.map((group) => {
-              const isSelected = selected?.kind === "group" && selected.id === group.id;
+              const isSelected = selectedKeys.has(`group:${group.id}`);
               const isLinking = !!linkPreview;
               const isFrom = linkPreview?.from.kind === "group" && linkPreview.from.id === group.id;
               const isHover = linkHoverTarget?.kind === "group" && linkHoverTarget.id === group.id;
@@ -2571,7 +2709,7 @@ export default function Home() {
                   ? { fill: group.fillColor ?? undefined, stroke: group.strokeColor ?? undefined }
                   : undefined;
               const isActiveDelete =
-                hoveredGroupId === group.id || (selected?.kind === "group" && selected.id === group.id);
+                hoveredGroupId === group.id || selectedKeys.has(`group:${group.id}`);
               return (
                 <g
                   key={group.id}
@@ -2745,7 +2883,7 @@ export default function Home() {
                   ? "icon-badge secondary"
                   : "icon-badge";
             const labelLines = node.label.split("\n");
-              const isSelected = selected?.kind === "node" && selected.id === node.id;
+              const isSelected = selectedKeys.has(`node:${node.id}`);
             const isLinking = !!linkPreview;
             const isFrom = linkPreview?.from.kind === "node" && linkPreview.from.id === node.id;
             const isHover = linkHoverTarget?.kind === "node" && linkHoverTarget.id === node.id;
@@ -2865,7 +3003,7 @@ export default function Home() {
             {!isLocked
               ? groups.map((group) => {
                   const isActiveDelete =
-                    hoveredGroupId === group.id || (selected?.kind === "group" && selected.id === group.id);
+                    hoveredGroupId === group.id || selectedKeys.has(`group:${group.id}`);
                   return (
                     <g
                       key={`${group.id}-delete`}
@@ -2889,6 +3027,16 @@ export default function Home() {
                 {group.label}
               </text>
             ))}
+            {selectionBox ? (
+              <rect
+                className="selection-rect"
+                x={selectionBox.x}
+                y={selectionBox.y}
+                width={selectionBox.w}
+                height={selectionBox.h}
+                rx={6}
+              />
+            ) : null}
           </svg>
         </section>
       </div>

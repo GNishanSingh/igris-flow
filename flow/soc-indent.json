@@ -1,0 +1,361 @@
+{
+  "name": "Igris Flow Builder",
+  "exportedAt": "2026-01-19T13:20:00.659Z",
+  "nodes": [
+    {
+      "id": "custom-2",
+      "label": "User / Endpoint",
+      "x": 53.25178139322236,
+      "y": 211.93862379319228,
+      "w": 156.8512550598258,
+      "h": 40,
+      "icon": "user",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-3",
+      "label": "SaaS Apps",
+      "x": 48.14425103426747,
+      "y": 92.63572745475093,
+      "w": 130.58811066382685,
+      "h": 40,
+      "icon": "monitor",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-4",
+      "label": "EDR Agent",
+      "x": 297.6750337321722,
+      "y": 191.43246833059092,
+      "w": 150,
+      "h": 45.709414586761284,
+      "icon": "agent",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-5",
+      "label": "SIEM / Log Lake",
+      "x": 510.665789444339,
+      "y": 94.96723033919474,
+      "w": 150,
+      "h": 37.716234165295475,
+      "icon": "archive",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-6",
+      "label": "Detections",
+      "x": 752.2034412391135,
+      "y": 172.06819578534186,
+      "w": 150,
+      "h": 40,
+      "icon": "engine",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-7",
+      "label": "SOAR Playbook",
+      "x": 800.7640755154612,
+      "y": 233.1828003885572,
+      "w": 150,
+      "h": 42.844477925579355,
+      "icon": "engine",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-8",
+      "label": "Incident / Case Management",
+      "x": 977.2148042418905,
+      "y": 133.2919136451044,
+      "w": 221.9381781281711,
+      "h": 40,
+      "icon": "spark",
+      "iconUrl": "",
+      "tone": "secondary",
+      "shape": "ticket",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-9",
+      "label": "Threat Intel",
+      "x": 1303.2512684411831,
+      "y": 51.67115357928755,
+      "w": 150,
+      "h": 40,
+      "icon": "door",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-10",
+      "label": "Root Cause + Lessons",
+      "x": 1347.2311741026126,
+      "y": 103.65069484368499,
+      "w": 183.11439945582492,
+      "h": 40,
+      "icon": "plug",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-11",
+      "label": "Identity Provider",
+      "x": 1307.8805936862295,
+      "y": 154.48835319073012,
+      "w": 150,
+      "h": 38.85811708264774,
+      "icon": "radar",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-12",
+      "label": "Slack/teams",
+      "x": 1327.8943318799695,
+      "y": 207.6097773724798,
+      "w": 150,
+      "h": 40,
+      "icon": "grid",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    },
+    {
+      "id": "custom-13",
+      "label": "Firewall / Proxy",
+      "x": 1231.43673405667,
+      "y": 268.7243819756952,
+      "w": 150,
+      "h": 39.99999999999994,
+      "icon": "wave",
+      "iconUrl": "",
+      "tone": "secondary",
+      "iconSource": "builtin"
+    }
+  ],
+  "groups": [],
+  "links": [
+    {
+      "id": "custom-1",
+      "from": {
+        "kind": "node",
+        "id": "custom-2",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-4",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Telmetry"
+    },
+    {
+      "id": "custom-2",
+      "from": {
+        "kind": "node",
+        "id": "custom-3",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-5",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Audit Logs"
+    },
+    {
+      "id": "custom-3",
+      "from": {
+        "kind": "node",
+        "id": "custom-4",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-5",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Events"
+    },
+    {
+      "id": "custom-4",
+      "from": {
+        "kind": "node",
+        "id": "custom-5",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-6",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Correlation / Rules"
+    },
+    {
+      "id": "custom-5",
+      "from": {
+        "kind": "node",
+        "id": "custom-6",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-8",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Create Case"
+    },
+    {
+      "id": "custom-6",
+      "from": {
+        "kind": "node",
+        "id": "custom-4",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-7",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Isolate Host"
+    },
+    {
+      "id": "custom-7",
+      "from": {
+        "kind": "node",
+        "id": "custom-9",
+        "anchor": "left"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-5",
+        "anchor": "right"
+      },
+      "tone": "secondary",
+      "animation": "light"
+    },
+    {
+      "id": "custom-8",
+      "from": {
+        "kind": "node",
+        "id": "custom-8",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-9",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Enrich"
+    },
+    {
+      "id": "custom-9",
+      "from": {
+        "kind": "node",
+        "id": "custom-8",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-10",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Post Inc"
+    },
+    {
+      "id": "custom-10",
+      "from": {
+        "kind": "node",
+        "id": "custom-5",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-11",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Auth Logs"
+    },
+    {
+      "id": "custom-12",
+      "from": {
+        "kind": "node",
+        "id": "custom-7",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-11",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Disable User"
+    },
+    {
+      "id": "custom-13",
+      "from": {
+        "kind": "node",
+        "id": "custom-7",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-12",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Notify"
+    },
+    {
+      "id": "custom-14",
+      "from": {
+        "kind": "node",
+        "id": "custom-7",
+        "anchor": "right"
+      },
+      "to": {
+        "kind": "node",
+        "id": "custom-13",
+        "anchor": "left"
+      },
+      "tone": "secondary",
+      "animation": "light",
+      "label": "Block IOC"
+    }
+  ]
+}
