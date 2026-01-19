@@ -200,13 +200,45 @@ const defaultFlowData = socIndentFlow as {
   links?: Link[];
 };
 
-const initialNodes: Node[] = Array.isArray(defaultFlowData.nodes)
+const centerGraphPositions = (nodes: Node[], groups: Group[]) => {
+  const items = [
+    ...nodes.map((node) => ({ x: node.x, y: node.y, w: node.w, h: node.h })),
+    ...groups.map((group) => ({ x: group.x, y: group.y, w: group.w, h: group.h }))
+  ];
+  if (items.length === 0) {
+    return { nodes, groups };
+  }
+  let minX = items[0].x;
+  let minY = items[0].y;
+  let maxX = items[0].x + items[0].w;
+  let maxY = items[0].y + items[0].h;
+  items.forEach((item) => {
+    minX = Math.min(minX, item.x);
+    minY = Math.min(minY, item.y);
+    maxX = Math.max(maxX, item.x + item.w);
+    maxY = Math.max(maxY, item.y + item.h);
+  });
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const offsetX = (viewBox.width - width) / 2 - minX;
+  const offsetY = (viewBox.height - height) / 2 - minY;
+  return {
+    nodes: nodes.map((node) => ({ ...node, x: node.x + offsetX, y: node.y + offsetY })),
+    groups: groups.map((group) => ({ ...group, x: group.x + offsetX, y: group.y + offsetY }))
+  };
+};
+
+const initialNodesRaw: Node[] = Array.isArray(defaultFlowData.nodes)
   ? defaultFlowData.nodes.map((node) => ({ ...node }))
   : [];
 
-const initialGroups: Group[] = Array.isArray(defaultFlowData.groups)
+const initialGroupsRaw: Group[] = Array.isArray(defaultFlowData.groups)
   ? defaultFlowData.groups.map((group) => ({ ...group }))
   : [];
+
+const centeredInitial = centerGraphPositions(initialNodesRaw, initialGroupsRaw);
+const initialNodes: Node[] = centeredInitial.nodes;
+const initialGroups: Group[] = centeredInitial.groups;
 
 const initialLinks: Link[] = Array.isArray(defaultFlowData.links)
   ? defaultFlowData.links.map((link, index) => ({
@@ -1305,8 +1337,9 @@ export default function Home() {
           animation: link.animation ?? "flow"
         }))
       : [];
-    setNodes(nextNodes);
-    setGroups(nextGroups);
+    const centered = centerGraphPositions(nextNodes, nextGroups);
+    setNodes(centered.nodes);
+    setGroups(centered.groups);
     setLinks(nextLinks);
     updateSelection(null);
     setSelectedLinkId(null);
@@ -1838,18 +1871,17 @@ export default function Home() {
         yCursor += maxHeight + layerGap;
       });
     }
-    setNodes((prev) =>
-      prev.map((node) => {
-        const next = positions.get(`node:${node.id}`);
-        return next ? { ...node, x: next.x, y: next.y } : node;
-      })
-    );
-    setGroups((prev) =>
-      prev.map((group) => {
-        const next = positions.get(`group:${group.id}`);
-        return next ? { ...group, x: next.x, y: next.y } : group;
-      })
-    );
+    const nextNodes = nodes.map((node) => {
+      const next = positions.get(`node:${node.id}`);
+      return next ? { ...node, x: next.x, y: next.y } : node;
+    });
+    const nextGroups = groups.map((group) => {
+      const next = positions.get(`group:${group.id}`);
+      return next ? { ...group, x: next.x, y: next.y } : group;
+    });
+    const centered = centerGraphPositions(nextNodes, nextGroups);
+    setNodes(centered.nodes);
+    setGroups(centered.groups);
   };
 
   const applyLinkStyleToAll = () => {
