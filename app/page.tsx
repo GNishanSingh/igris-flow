@@ -151,16 +151,6 @@ const linkAnimationDefaults: Record<Exclude<LinkAnimation, "none">, number> = {
 
 type Selectable = { kind: "node" | "group"; id: string };
 type SelectedItem = Selectable | null;
-type LinkSeed = {
-  from: { id: string; anchor: Anchor; kind?: "node" | "group" };
-  to: { id: string; anchor: Anchor; kind?: "node" | "group" };
-  tone?: NodeTone;
-  color?: string;
-  label?: string;
-  animation?: LinkAnimation;
-  animationDuration?: number;
-  animationDirection?: LinkDirection;
-};
 type FlowPreset = {
   id: string;
   label: string;
@@ -204,11 +194,33 @@ const exportCss = `
 @keyframes linkFlowLight { from { stroke-dashoffset: 0; } to { stroke-dashoffset: var(--light-travel, -100px); } }
 `;
 
-const initialNodes: Node[] = [];
+const defaultFlowData = socIndentFlow as {
+  nodes?: Node[];
+  groups?: Group[];
+  links?: Link[];
+};
 
-const initialGroups: Group[] = [];
+const initialNodes: Node[] = Array.isArray(defaultFlowData.nodes)
+  ? defaultFlowData.nodes.map((node) => ({ ...node }))
+  : [];
 
-const initialLinks: LinkSeed[] = [];
+const initialGroups: Group[] = Array.isArray(defaultFlowData.groups)
+  ? defaultFlowData.groups.map((group) => ({ ...group }))
+  : [];
+
+const initialLinks: Link[] = Array.isArray(defaultFlowData.links)
+  ? defaultFlowData.links.map((link, index) => ({
+      id: link.id ?? `base-${index}`,
+      from: { ...link.from, kind: link.from.kind ?? "node" },
+      to: { ...link.to, kind: link.to.kind ?? "node" },
+      tone: link.tone,
+      color: link.color,
+      label: link.label,
+      animation: link.animation ?? "flow",
+      animationDuration: link.animationDuration,
+      animationDirection: link.animationDirection
+    }))
+  : [];
 const flowPresets: FlowPreset[] = [
   {
     id: "soc-indent",
@@ -413,16 +425,10 @@ export default function Home() {
   const [selected, setSelected] = useState<SelectedItem>(null);
   const [selectedItems, setSelectedItems] = useState<Selectable[]>([]);
   const [links, setLinks] = useState<Link[]>(() =>
-    initialLinks.map((link, index) => ({
-      id: `base-${index}`,
-      from: { ...link.from, kind: link.from.kind ?? "node" },
-      to: { ...link.to, kind: link.to.kind ?? "node" },
-      tone: link.tone,
-      color: link.color,
-      label: link.label,
-      animation: link.animation ?? "flow",
-      animationDuration: link.animationDuration,
-      animationDirection: link.animationDirection
+    initialLinks.map((link) => ({
+      ...link,
+      from: { ...link.from },
+      to: { ...link.to }
     }))
   );
   const [linkDraft, setLinkDraft] = useState<{
