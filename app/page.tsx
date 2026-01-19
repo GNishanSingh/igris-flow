@@ -198,95 +198,11 @@ const exportCss = `
 @keyframes linkFlowLight { from { stroke-dashoffset: 0; } to { stroke-dashoffset: var(--light-travel, -100px); } }
 `;
 
-const initialNodes: Node[] = [
-  { id: "api", label: "API", x: 40, y: 190, w: 150, h: 32, icon: "plug", tone: "muted" },
-  { id: "extension", label: "Extension", x: 40, y: 230, w: 150, h: 32, icon: "grid", tone: "muted" },
-  { id: "endpoint", label: "Endpoint Agent", x: 40, y: 270, w: 150, h: 32, icon: "device", tone: "muted" },
-  { id: "llm-gateway", label: "LLM Gateway", x: 40, y: 310, w: 150, h: 32, icon: "chip", tone: "muted" },
-  { id: "guardrails", label: "Guardrails", x: 40, y: 350, w: 150, h: 32, icon: "shield", tone: "muted" },
-  { id: "mcp-gateway", label: "MCP Gateway", x: 40, y: 390, w: 150, h: 32, icon: "grid", tone: "muted" },
-  { id: "sensor", label: "Sensor", x: 230, y: 300, w: 140, h: 46, icon: "radar", tone: "primary" },
-  { id: "entry", label: "Entry Point", x: 400, y: 300, w: 140, h: 46, icon: "door", tone: "primary" },
-  { id: "route", label: "Route", x: 580, y: 300, w: 120, h: 46, icon: "route", tone: "primary" },
-  { id: "dlp", label: "DLP", x: 750, y: 210, w: 150, h: 34, icon: "lock", tone: "secondary" },
-  { id: "app-behavior", label: "App Behavior", x: 750, y: 250, w: 150, h: 34, icon: "spark", tone: "secondary" },
-  { id: "user-behavior", label: "User Behavior", x: 750, y: 290, w: 150, h: 34, icon: "user", tone: "secondary" },
-  { id: "system-behavior", label: "System Behavior", x: 750, y: 330, w: 150, h: 34, icon: "engine", tone: "secondary" },
-  { id: "correlation", label: "Correlation", x: 750, y: 370, w: 150, h: 34, icon: "graph", tone: "secondary" },
-  { id: "engine", label: "Engine", x: 1090, y: 300, w: 140, h: 46, icon: "engine", tone: "primary" },
-  { id: "external", label: "External Sources / SIEM", x: 420, y: 80, w: 200, h: 34, icon: "cloud", tone: "muted" },
-  { id: "jit", label: "JIT", x: 640, y: 80, w: 80, h: 34, icon: "bolt", tone: "muted" },
-  { id: "remedial", label: "Remedial Action", x: 740, y: 80, w: 160, h: 34, icon: "wrench", tone: "muted" },
-  { id: "resolver", label: "Resolver Agent", x: 1140, y: 80, w: 180, h: 40, icon: "agent", tone: "highlight" },
-  { id: "ft-llm", label: "Fine-tuned LLM", x: 1140, y: 130, w: 180, h: 40, icon: "spark", tone: "highlight" },
-  { id: "two-way", label: "Two-way Comms", x: 1140, y: 180, w: 180, h: 40, icon: "wave", tone: "highlight" },
-  { id: "channel", label: "Communication Channel", x: 1360, y: 230, w: 200, h: 40, icon: "chat", tone: "highlight" },
-  { id: "quill-store", label: "Quill Store", x: 1260, y: 320, w: 160, h: 40, icon: "archive", tone: "secondary" },
-  { id: "admin", label: "Admin", x: 980, y: 430, w: 120, h: 36, icon: "user", tone: "muted" },
-  { id: "persistent-db", label: "Persistent DB", x: 980, y: 480, w: 150, h: 40, icon: "database", tone: "secondary" },
-  { id: "scheduler", label: "Scheduler", x: 930, y: 540, w: 120, h: 36, icon: "clock", tone: "muted" },
-  { id: "redis", label: "Redis", x: 860, y: 620, w: 110, h: 32, icon: "bolt", tone: "muted" },
-  { id: "db-cache", label: "DB Cache", x: 350, y: 620, w: 120, h: 36, icon: "cache", tone: "muted" },
-  { id: "postgres", label: "Postgres DB", x: 540, y: 630, w: 180, h: 32, icon: "database", tone: "secondary" },
-  { id: "graph", label: "Graph DB", x: 540, y: 670, w: 180, h: 32, icon: "graph", tone: "secondary" },
-  { id: "vector", label: "Vector DB", x: 540, y: 710, w: 180, h: 32, icon: "layers", tone: "secondary" },
-  { id: "warehouse", label: "Data Warehouse", x: 540, y: 750, w: 180, h: 32, icon: "warehouse", tone: "secondary" },
-  { id: "collector", label: "Collector Agent", x: 1060, y: 630, w: 180, h: 32, icon: "collector", tone: "secondary" },
-  { id: "normalizer", label: "Normalization Agent", x: 1060, y: 670, w: 180, h: 32, icon: "filter", tone: "secondary" },
-  { id: "extraction", label: "Extraction Agent", x: 1060, y: 710, w: 180, h: 32, icon: "extract", tone: "secondary" },
-  { id: "storage", label: "Storage Agent", x: 1060, y: 750, w: 180, h: 32, icon: "storage", tone: "secondary" },
-  { id: "ui", label: "UI", x: 360, y: 840, w: 90, h: 32, icon: "monitor", tone: "muted" },
-  { id: "quill-ui", label: "Quill UI Agent", x: 470, y: 840, w: 150, h: 32, icon: "user", tone: "primary" },
-  { id: "query", label: "Query Engine", x: 650, y: 840, w: 140, h: 32, icon: "search", tone: "primary" }
-];
+const initialNodes: Node[] = [];
 
-const initialGroups: Group[] = [
-  { id: "policies", label: "Known Policies", x: 720, y: 190, w: 360, h: 230 },
-  { id: "truth", label: "Source of Truth", x: 520, y: 610, w: 220, h: 200 },
-  { id: "pipeline", label: "Pipeline", x: 1040, y: 610, w: 220, h: 200 }
-];
+const initialGroups: Group[] = [];
 
-const initialLinks: LinkSeed[] = [
-  { from: { id: "api", anchor: "right" }, to: { id: "sensor", anchor: "left" }, tone: "muted" },
-  { from: { id: "extension", anchor: "right" }, to: { id: "sensor", anchor: "left" }, tone: "muted" },
-  { from: { id: "endpoint", anchor: "right" }, to: { id: "sensor", anchor: "left" }, tone: "muted" },
-  { from: { id: "llm-gateway", anchor: "right" }, to: { id: "sensor", anchor: "left" }, tone: "muted" },
-  { from: { id: "guardrails", anchor: "right" }, to: { id: "sensor", anchor: "left" }, tone: "muted" },
-  { from: { id: "mcp-gateway", anchor: "right" }, to: { id: "sensor", anchor: "left" }, tone: "muted" },
-  { from: { id: "sensor", anchor: "right" }, to: { id: "entry", anchor: "left" }, tone: "primary" },
-  { from: { id: "entry", anchor: "right" }, to: { id: "route", anchor: "left" }, tone: "primary" },
-  { from: { id: "route", anchor: "right" }, to: { id: "dlp", anchor: "left" }, tone: "secondary" },
-  { from: { id: "route", anchor: "right" }, to: { id: "app-behavior", anchor: "left" }, tone: "secondary" },
-  { from: { id: "route", anchor: "right" }, to: { id: "user-behavior", anchor: "left" }, tone: "secondary" },
-  { from: { id: "route", anchor: "right" }, to: { id: "system-behavior", anchor: "left" }, tone: "secondary" },
-  { from: { id: "route", anchor: "right" }, to: { id: "correlation", anchor: "left" }, tone: "secondary" },
-  { from: { id: "dlp", anchor: "right" }, to: { id: "engine", anchor: "left" }, tone: "secondary" },
-  { from: { id: "app-behavior", anchor: "right" }, to: { id: "engine", anchor: "left" }, tone: "secondary" },
-  { from: { id: "user-behavior", anchor: "right" }, to: { id: "engine", anchor: "left" }, tone: "secondary" },
-  { from: { id: "system-behavior", anchor: "right" }, to: { id: "engine", anchor: "left" }, tone: "secondary" },
-  { from: { id: "correlation", anchor: "right" }, to: { id: "engine", anchor: "left" }, tone: "secondary" },
-  { from: { id: "engine", anchor: "right" }, to: { id: "resolver", anchor: "left" }, tone: "highlight" },
-  { from: { id: "engine", anchor: "right" }, to: { id: "ft-llm", anchor: "left" }, tone: "highlight" },
-  { from: { id: "engine", anchor: "right" }, to: { id: "quill-store", anchor: "left" }, tone: "secondary" },
-  { from: { id: "engine", anchor: "bottom" }, to: { id: "persistent-db", anchor: "top" }, tone: "secondary" },
-  { from: { id: "external", anchor: "right" }, to: { id: "jit", anchor: "left" }, tone: "muted" },
-  { from: { id: "jit", anchor: "right" }, to: { id: "remedial", anchor: "left" }, tone: "muted" },
-  { from: { id: "remedial", anchor: "right" }, to: { id: "resolver", anchor: "left" }, tone: "muted" },
-  { from: { id: "resolver", anchor: "bottom" }, to: { id: "two-way", anchor: "top" }, tone: "highlight" },
-  { from: { id: "ft-llm", anchor: "bottom" }, to: { id: "two-way", anchor: "top" }, tone: "highlight" },
-  { from: { id: "two-way", anchor: "right" }, to: { id: "channel", anchor: "left" }, tone: "highlight" },
-  { from: { id: "quill-store", anchor: "right" }, to: { id: "channel", anchor: "left" }, tone: "secondary" },
-  { from: { id: "admin", anchor: "bottom" }, to: { id: "persistent-db", anchor: "top" }, tone: "muted" },
-  { from: { id: "persistent-db", anchor: "bottom" }, to: { id: "scheduler", anchor: "top" }, tone: "muted" },
-  { from: { id: "scheduler", anchor: "right" }, to: { id: "collector", anchor: "left" }, tone: "secondary" },
-  { from: { id: "redis", anchor: "right" }, to: { id: "collector", anchor: "left" }, tone: "muted" },
-  { from: { id: "collector", anchor: "right" }, to: { id: "quill-store", anchor: "bottom" }, tone: "secondary" },
-  { from: { id: "postgres", anchor: "left" }, to: { id: "db-cache", anchor: "right" }, tone: "muted" },
-  { from: { id: "db-cache", anchor: "right" }, to: { id: "engine", anchor: "bottom" }, tone: "secondary" },
-  { from: { id: "postgres", anchor: "bottom" }, to: { id: "query", anchor: "top" }, tone: "primary" },
-  { from: { id: "query", anchor: "left" }, to: { id: "quill-ui", anchor: "right" }, tone: "primary" },
-  { from: { id: "quill-ui", anchor: "left" }, to: { id: "ui", anchor: "right" }, tone: "primary" }
-];
+const initialLinks: LinkSeed[] = [];
 
 const anchorPoint = (item: { x: number; y: number; w: number; h: number }, anchor: Anchor) => {
   switch (anchor) {
