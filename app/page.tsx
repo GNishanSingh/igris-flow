@@ -2758,7 +2758,7 @@ export default function Home() {
             className="diagram"
             viewBox={`0 0 ${viewBox.width} ${viewBox.height}`}
             role="img"
-            aria-label="Quilr system architecture diagram"
+            aria-label="Igris Flow Builder canvas"
             style={{ cursor: hoverCursor }}
             onPointerDown={handleCanvasPointerDown}
             onPointerMove={handlePointerMove}

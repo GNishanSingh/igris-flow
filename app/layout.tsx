@@ -15,8 +15,8 @@ const unbounded = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "Quilr Architecture Diagram",
-  description: "A stylized architecture diagram for the Quilr system."
+  title: "Igris Flow Builder",
+  description: "A flexible flow builder for designing diagrams and system maps."
 };
 
 export default function RootLayout({
