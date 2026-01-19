@@ -422,8 +422,6 @@ export default function Home() {
     fromAnchor: "right",
     toAnchor: "left"
   });
-  const [connectMode, setConnectMode] = useState(false);
-  const [connectFrom, setConnectFrom] = useState<Selectable | null>(null);
   const [linkPreview, setLinkPreview] = useState<{ from: Selectable; to: { x: number; y: number } } | null>(null);
   const [linkHoverTarget, setLinkHoverTarget] = useState<Selectable | null>(null);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
@@ -549,11 +547,6 @@ export default function Home() {
   }, [links]);
   const animationSyncOffset =
     animationSyncDuration > 0 ? animationElapsed % animationSyncDuration : 0;
-  const connectStatus = connectMode
-    ? connectFrom
-      ? "Pick a target node or group"
-      : "Pick a source node or group"
-    : null;
 
   const toSvgPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -612,32 +605,6 @@ export default function Home() {
     startLinkDrag(event, selectable);
   };
 
-  const handleConnectSelection = (event: ReactPointerEvent<SVGGElement>, kind: "node" | "group", id: string) => {
-    if (isLocked) {
-      return;
-    }
-    const selectedItem = { kind, id } satisfies Selectable;
-    if (!connectFrom) {
-      setConnectFrom(selectedItem);
-      setSelected(selectedItem);
-      startLinkDrag(event, selectedItem);
-      return;
-    }
-    if (connectFrom.kind === kind && connectFrom.id === id) {
-      startLinkDrag(event, selectedItem);
-      return;
-    }
-    const fromItem = getItem(connectFrom);
-    const toItem = getItem(selectedItem);
-    if (fromItem && toItem) {
-      const anchors = resolveAnchors(fromItem, toItem);
-      const tone = connectFrom.kind === "node" ? (fromItem as Node).tone : "muted";
-      addLink(connectFrom.kind, connectFrom.id, kind, id, anchors.from, anchors.to, tone);
-    }
-    setSelected(selectedItem);
-    setConnectFrom(null);
-  };
-
   const handlePointerDown = (event: ReactPointerEvent<SVGGElement>, node: Node) => {
     if (event.button !== 0) {
       return;
@@ -648,10 +615,6 @@ export default function Home() {
     setHoveredGroupId(null);
     if (isLocked) {
       setSelected({ kind: "node", id: node.id });
-      return;
-    }
-    if (connectMode) {
-      handleConnectSelection(event, "node", node.id);
       return;
     }
     const point = toSvgPoint(event.clientX, event.clientY);
@@ -685,10 +648,6 @@ export default function Home() {
       setSelected({ kind: "group", id: group.id });
       return;
     }
-    if (connectMode) {
-      handleConnectSelection(event, "group", group.id);
-      return;
-    }
     const point = toSvgPoint(event.clientX, event.clientY);
     const edges = getResizeEdges(group, point);
     if (edges.left || edges.right || edges.top || edges.bottom) {
@@ -718,12 +677,6 @@ export default function Home() {
     if (isLocked) {
       return;
     }
-    if (connectMode) {
-      setConnectFrom(null);
-      setLinkPreview(null);
-      setLinkHoverTarget(null);
-      linkDragRef.current = null;
-    }
   };
 
   useEffect(() => {
@@ -738,17 +691,6 @@ export default function Home() {
       setLinkDraft((prev) => ({ ...prev, toId: nextId, toKind: nextKind }));
     }
   }, [selected, linkTargets, linkDraft.toId, linkDraft.toKind]);
-
-  useEffect(() => {
-    if (!connectFrom) {
-      return;
-    }
-    const exists =
-      connectFrom.kind === "node" ? nodeMap.has(connectFrom.id) : groupMap.has(connectFrom.id);
-    if (!exists) {
-      setConnectFrom(null);
-    }
-  }, [connectFrom, nodeMap, groupMap]);
 
   useEffect(() => {
     if (!exportMenuOpen) {
@@ -793,7 +735,7 @@ export default function Home() {
       if (hoverCursor !== "grabbing") {
         setHoverCursor("grabbing");
       }
-    } else if (!connectMode) {
+    } else {
       const point = toSvgPoint(event.clientX, event.clientY);
       let cursor: typeof hoverCursor = "default";
       for (let i = nodes.length - 1; i >= 0; i -= 1) {
@@ -825,8 +767,6 @@ export default function Home() {
       if (cursor !== hoverCursor) {
         setHoverCursor(cursor);
       }
-    } else if (hoverCursor !== "default") {
-      setHoverCursor("default");
     }
     if (resizeRef.current) {
       if (resizeRef.current.pointerId !== event.pointerId) {
@@ -960,7 +900,6 @@ export default function Home() {
           const tone = from.kind === "node" ? (fromItem as Node).tone : "muted";
           addLink(from.kind, from.id, target.kind, target.id, anchors.from, anchors.to, tone);
           setSelected(target);
-          setConnectFrom(null);
         }
       }
       if (svgRef.current?.hasPointerCapture(event.pointerId)) {
@@ -1080,20 +1019,6 @@ export default function Home() {
     svgRef.current?.setPointerCapture(event.pointerId);
   };
 
-  const handleRemoveSelected = () => {
-    if (isLocked) {
-      return;
-    }
-    if (!selected) {
-      return;
-    }
-    if (selected.kind === "node") {
-      removeNodeById(selected.id);
-    } else {
-      removeGroupById(selected.id);
-    }
-  };
-
   const removeNodeById = (nodeId: string) => {
     if (isLocked) {
       return;
@@ -1107,9 +1032,6 @@ export default function Home() {
           !(link.to.kind === "node" && link.to.id === nodeId)
       )
     );
-    if (connectFrom && connectFrom.kind === "node" && connectFrom.id === nodeId) {
-      setConnectFrom(null);
-    }
     if (selected?.kind === "node" && selected.id === nodeId) {
       setSelected(null);
     }
@@ -1130,9 +1052,6 @@ export default function Home() {
           !(link.to.kind === "group" && link.to.id === groupId)
       )
     );
-    if (connectFrom && connectFrom.kind === "group" && connectFrom.id === groupId) {
-      setConnectFrom(null);
-    }
     if (selected?.kind === "group" && selected.id === groupId) {
       setSelected(null);
     }
@@ -1158,8 +1077,6 @@ export default function Home() {
     setLinks([]);
     setSelected(null);
     setDraggingId(null);
-    setConnectFrom(null);
-    setConnectMode(false);
     setLinkPreview(null);
     setLinkHoverTarget(null);
     setSelectedLinkId(null);
@@ -1210,8 +1127,6 @@ export default function Home() {
         );
         setSelected(null);
         setSelectedLinkId(null);
-        setConnectFrom(null);
-        setConnectMode(false);
         setLinkPreview(null);
         setLinkHoverTarget(null);
         dragRef.current = null;
@@ -2052,8 +1967,6 @@ export default function Home() {
                 const nextLocked = event.target.checked;
                 setIsLocked(nextLocked);
                 if (nextLocked) {
-                  setConnectMode(false);
-                  setConnectFrom(null);
                   setLinkPreview(null);
                   setLinkHoverTarget(null);
                   setSelectedLinkId(null);
@@ -2067,36 +1980,9 @@ export default function Home() {
             </span>
             <span className="lock-toggle-label">{isLocked ? "Locked" : "Unlocked"}</span>
           </label>
-          <button
-            className={`btn ${connectMode ? "active" : ""}`}
-            type="button"
-            onClick={() => {
-              if (isLocked) {
-                return;
-              }
-              setConnectMode((prev) => !prev);
-              setConnectFrom(null);
-              setLinkPreview(null);
-              setLinkHoverTarget(null);
-              setSelectedLinkId(null);
-              linkDragRef.current = null;
-            }}
-            disabled={isLocked}
-          >
-            {connectMode ? "Connecting..." : "Connect mode"}
-          </button>
-          <button
-            className="btn ghost"
-            type="button"
-            onClick={handleRemoveSelected}
-            disabled={!selected || isLocked}
-          >
-            Remove selected
-          </button>
         </div>
         <div className="toolbar-status">
           {selected ? `Selected: ${selectedLabel}` : "Select a node or group"}
-          {connectStatus ? ` • ${connectStatus}` : ""}
         </div>
       </div>
       <input
