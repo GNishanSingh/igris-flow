@@ -461,6 +461,13 @@ export default function Home() {
     pointerId: number;
   } | null>(null);
   const linkDragRef = useRef<{ from: Selectable; pointerId: number } | null>(null);
+  const multiDragRef = useRef<{
+    startX: number;
+    startY: number;
+    pointerId: number;
+    nodes: Map<string, { x: number; y: number; w: number; h: number }>;
+    groups: Map<string, { x: number; y: number; w: number; h: number }>;
+  } | null>(null);
   const resizeRef = useRef<{
     kind: "node" | "group";
     id: string;
@@ -621,6 +628,34 @@ export default function Home() {
     svgRef.current?.setPointerCapture(event.pointerId);
   };
 
+  const startMultiDrag = (event: ReactPointerEvent<SVGElement>, point: { x: number; y: number }) => {
+    const nodeStarts = new Map<string, { x: number; y: number; w: number; h: number }>();
+    const groupStarts = new Map<string, { x: number; y: number; w: number; h: number }>();
+    selectedItems.forEach((item) => {
+      if (item.kind === "node") {
+        const node = nodeMap.get(item.id);
+        if (node) {
+          nodeStarts.set(item.id, { x: node.x, y: node.y, w: node.w, h: node.h });
+        }
+      } else {
+        const group = groupMap.get(item.id);
+        if (group) {
+          groupStarts.set(item.id, { x: group.x, y: group.y, w: group.w, h: group.h });
+        }
+      }
+    });
+    multiDragRef.current = {
+      startX: point.x,
+      startY: point.y,
+      pointerId: event.pointerId,
+      nodes: nodeStarts,
+      groups: groupStarts
+    };
+    setDraggingId(null);
+    setHoverCursor("grabbing");
+    svgRef.current?.setPointerCapture(event.pointerId);
+  };
+
   const handleConnectorPointerDown = (event: ReactPointerEvent<SVGCircleElement>, node: Node) => {
     if (isLocked) {
       return;
@@ -653,6 +688,10 @@ export default function Home() {
       handleResizeStart(event, "node", node, edges);
       return;
     }
+    if (selectedItems.length > 1 && selectedKeys.has(`node:${node.id}`)) {
+      startMultiDrag(event, point);
+      return;
+    }
     dragRef.current = {
       kind: "node",
       id: node.id,
@@ -682,6 +721,10 @@ export default function Home() {
     const edges = getResizeEdges(group, point);
     if (edges.left || edges.right || edges.top || edges.bottom) {
       handleResizeStart(event, "group", group, edges);
+      return;
+    }
+    if (selectedItems.length > 1 && selectedKeys.has(`group:${group.id}`)) {
+      startMultiDrag(event, point);
       return;
     }
     dragRef.current = {
@@ -772,6 +815,48 @@ export default function Home() {
         setLinkHoverTarget(hover);
       }
       setLinkPreview({ from: linkDragRef.current.from, to: point });
+      return;
+    }
+    if (multiDragRef.current && multiDragRef.current.pointerId === event.pointerId) {
+      const point = toSvgPoint(event.clientX, event.clientY);
+      const { startX, startY, nodes: nodeStarts, groups: groupStarts } = multiDragRef.current;
+      const dx = point.x - startX;
+      const dy = point.y - startY;
+      if (nodeStarts.size > 0) {
+        setNodes((prev) =>
+          prev.map((node) => {
+            const start = nodeStarts.get(node.id);
+            if (!start) {
+              return node;
+            }
+            const nextX = clamp(start.x + dx, 0, viewBox.width - start.w);
+            const nextY = clamp(start.y + dy, 0, viewBox.height - start.h);
+            if (nextX === node.x && nextY === node.y) {
+              return node;
+            }
+            return { ...node, x: nextX, y: nextY };
+          })
+        );
+      }
+      if (groupStarts.size > 0) {
+        setGroups((prev) =>
+          prev.map((group) => {
+            const start = groupStarts.get(group.id);
+            if (!start) {
+              return group;
+            }
+            const nextX = clamp(start.x + dx, 0, viewBox.width - start.w);
+            const nextY = clamp(start.y + dy, 0, viewBox.height - start.h);
+            if (nextX === group.x && nextY === group.y) {
+              return group;
+            }
+            return { ...group, x: nextX, y: nextY };
+          })
+        );
+      }
+      if (hoverCursor !== "grabbing") {
+        setHoverCursor("grabbing");
+      }
       return;
     }
     if (resizeRef.current) {
@@ -998,6 +1083,14 @@ export default function Home() {
       linkDragRef.current = null;
       setLinkPreview(null);
       setLinkHoverTarget(null);
+      setHoverCursor("default");
+      return;
+    }
+    if (multiDragRef.current && multiDragRef.current.pointerId === event.pointerId) {
+      if (svgRef.current?.hasPointerCapture(event.pointerId)) {
+        svgRef.current.releasePointerCapture(event.pointerId);
+      }
+      multiDragRef.current = null;
       setHoverCursor("default");
       return;
     }
