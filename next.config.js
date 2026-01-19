@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
+const repo = "igris-flow";
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  output: "export",
+  trailingSlash: true,
+  basePath: isProd ? `/${repo}` : "",
+  assetPrefix: isProd ? `/${repo}/` : ""
 };
 
 module.exports = nextConfig;
