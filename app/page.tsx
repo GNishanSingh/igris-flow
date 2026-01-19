@@ -3134,17 +3134,6 @@ export default function Home() {
         </section>
       </div>
 
-      <div className="legend">
-        <span>
-          <i style={{ background: "rgba(108, 212, 255, 0.6)" }} /> Core runtime flow
-        </span>
-        <span>
-          <i style={{ background: "rgba(110, 231, 183, 0.6)" }} /> Policy and data enrichment
-        </span>
-        <span>
-          <i style={{ background: "rgba(252, 165, 255, 0.6)" }} /> Human-in-the-loop channel
-        </span>
-      </div>
     </main>
   );
 }
